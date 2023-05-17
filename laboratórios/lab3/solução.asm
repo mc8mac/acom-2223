@@ -15,10 +15,11 @@
 ; ATENÇÃO: constantes hexadecimais que comecem por uma letra devem ter 0 antes.
 ;          Isto não altera o valor de 16 bits e permite distinguir números de identificadores
 DISPLAYS   EQU 0A000H  ; endereço dos displays de 7 segmentos (periférico POUT-1)
-TEC_LIN    EQU 0C000H  ; endereço das linhas do teclado (periférico POUT-2)
-TEC_COL    EQU 0E000H  ; endereço das colunas do teclado (periférico PIN)
-LINHA      EQU 16      ; linha a testar
+POUT       EQU 0C000H  ; endereço das linhas do teclado (periférico POUT-2)
+PIN        EQU 0E000H  ; endereço das colunas do teclado (periférico PIN)
 MASCARA    EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
+LINE_R     EQU 16      ; linha a testar
+OPERADOR   EQU 4       ; Quociente para multiplicação
 
 ; **********************************************************************
 ; * Código
@@ -26,57 +27,88 @@ MASCARA    EQU 0FH     ; para isolar os 4 bits de menor peso, ao ler as colunas 
 PLACE      0
 inicio:		
 ; inicializações
-    MOV R2, TEC_LIN   ; endereço do periférico das linhas
-    MOV R3, TEC_COL   ; endereço do periférico das colunas
-    MOV R4, DISPLAYS  ; endereço do periférico dos displays
-    MOV R5, MASCARA   ; para isolar os 4 bits de menor peso, ao ler as colunas do teclado
-    MOV R6, 0         ; contador de bits
-    MOV R9, 4         ; quociente de multiplicação
+    
+    MOV R0, 0          ; bits da coluna da tecla pressionada
+    MOV R1, 0          ; bits da linha atual
+    MOV R2, 0          ; valor a passar aos displays
+    MOV R3, DISPLAYS   ; endereço dos displays
+    MOV R4, POUT       ; endereço do periférico de saída
+    MOV R5, PIN        ; endereço do periférico de entrada
+    MOV R6, MASCARA    ; máscara para bits de menor peso
+    MOV R7, 0          ;
+    MOV R8, 0          ;
+    MOV R9, 0          ;
+    MOV R10, OPERADOR  ;
 
 ; corpo principal do programa
 
-reset_linha:
-    MOV R1, LINHA      ; reset do nº de linhas a verificar
+reset:
+    MOV R1, LINE_R     ; reset das linhas a verificar
+    MOVB [R3], R2      ; escreve o valor nos displays
 
-espera_tecla:          ; neste ciclo espera-se até uma tecla ser premida
-    SHR R1,1           ; reduz o nº de bits de r1 para verificação
-    CMP R1,0           ; verifica se já leu todas as linhas
-    JZ reset_linha     ; reset do nº de linhas a verificar
-    MOVB [R2], R1      ; escrever no periférico de saída (linhas)
-    MOVB R0, [R3]      ; ler do periférico de entrada (colunas)
-    AND R0, R5         ; elimina bits para além dos bits 0-3
+espera_tecla:
+    SHR R1, 1          ; linha seguinte
+    CMP R1, 0          ; já verificou todas as linhas?
+    JZ reset           ; reset das linhas a verificar
+    MOVB [R4], R1      ; ativa a linha R1 no teclado
+    MOVB R0, [R5]      ; recebe o bit da coluna da tecla pressionada
+    AND R0, R6         ; elimina bits para além dos bits 0-3
     CMP R0, 0          ; há tecla premida?
-    JZ espera_tecla    ; se nenhuma tecla premida, repete
-    MOV R6, 0          ; caso contrário inicia o contador de iterações a zero
-    
-display:
-    .primeirait:       ; primeira iteração para converter de binário para decimal
-        CMP R6,0       ; já ocorreu alguma iteração?
-        JNZ .segundait ; salta para a iteração seguinte
-        MOV R7, R1     ; preparar para fazer a conversão para decimal
-        MOV R8, 0
-        JMP conta_bits ; realiza a conversão
-    .segundait:        ; última iteração para converter de binário para decimal
-        CMP R6,1       ; já ocorreu a mais que uma iteração?
-        JNZ final      ; salta para obter o resultado final
-        MOV R1, R8     ; R1 assume o seu número em binário para a conta final
-        MOV R7, R0     ; preparar para fazer a conversão de binário para decimal
-        MOV R8, 0      ; reset do contador
-        JMP conta_bits ; realiza a conversão
-    .final:            ; etiqueta local para realizar as últimas operações para conversão para decimal 
-    ;********************************************************************************
-        MUL R1, R9     ; Fórmula dada para mudança para decimal
-        ADD R1, R8     ;
-    ;********************************************************************************
-        MOVB [R4], R1  ; escreve linha e coluna nos displays
-        JMP espera_tecla   ; verifica se alguma tecla está a ser pressionada de momento
+    JZ espera_tecla    ; se não repete
 
-conta_bits:            ; conta o nº de bits
-    SHR R7,1           ; retira um bit a R7
-    CMP R7,0           ; R7 é zero?
-    JNZ .repeat        ; Se não continua a retirar bits
-    INC R6             ; incrementa o contador de iterações
-    JMP display        ; fim da iteração
-    .repeat:           ;
-    INC R8             ; incremento do contador de bits
-    JMP conta_bits     ; repete o ciclo
+conversor:
+    CMP R7, 1
+    JZ segunda
+
+    CMP R7, 2
+    JZ final
+        
+    primeira:
+        MOV R8, R1
+        MOV R9, 0
+        INC R7
+        JMP bitdec
+
+    segunda:
+        MOV R1, R9
+        MOV R8, R0
+        MOV R9, 0
+        INC R7
+        JMP bitdec
+
+    bitdec:
+        SHR R8,1
+        CMP R8, 0
+        JNZ repetir
+        JMP conversor
+        repetir:
+            INC R9
+            JMP bitdec
+
+    final:
+        MOV R0, R9
+        MOV R7, 0
+        MOV R9, 0   
+
+operacao:
+    MUL R1, R10
+    ADD R1, R0
+    JMP controlo
+
+controlo:
+    CMP R1, 0
+    JZ adicionar
+    MOV R11, 0FH
+    CMP R1, R11
+    JZ subtrair
+    JMP reset
+
+JMP reset
+
+adicionar:
+    INC R2
+    JMP reset
+
+subtrair:
+    DEC R2
+    JMP reset
