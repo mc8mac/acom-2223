@@ -121,10 +121,10 @@ graphics:
     PUSH R4
     PUSH R6
 
-    MOV R8, R2
+    MOV R8, R2		; guarda a primeira coluna
     MOV R5, [R4]	; obtém a largura do boneco
     MOV R6, [R4+2]	; obtem a altura do boneco
-    ADD R4, 4		; endereço da cor do 1º pixel (4 porque a largura e altura são DUAS wordS)
+    ADD R4, 4		; endereço da cor do 1º pixel (4 porque a largura e altura são duas words)
     
 reinicializa_largura:
     reset_lenght:
@@ -153,32 +153,41 @@ end_graphics:
     POP R1
     RET
 
+; **********************************************************************
+; erase_object - Apaga na linha e coluna indicadas
+;			  com a forma definida na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o boneco
+;
+; **********************************************************************
+
 erase_object:
-	PUSH R1
+    PUSH R1
     PUSH R2
     PUSH R3
     PUSH R4
     PUSH R6
 
     MOV R8, R2
-    MOV R5, [R4]
-    MOV R6, [R4+2]
-    ADD R4, 4
+    MOV R5, [R4]		; obtém a largura do boneco
+    MOV R6, [R4+2]		; obtem a altura do boneco
+    ADD R4, 4			; endereço da cor do 1º pixel (4 porque a largura e altura são DUAS wordS)
     reset_lenght_erase:
-        PUSH R5
+        PUSH R5			;guarda a largura na pilha
 
 erase_pixels:       		; desenha os pixels do boneco a partir da tabela
-	MOV R3, 0
-    CALL write_pixel
-    ADD R4, 2
-    ADD R2, 1
-    SUB R5, 1
-    JNZ erase_pixels
-    SUB R6, 1
-    JZ end_erase
-    POP R5
-    ADD R1,1
-    MOV R2, R8
+	MOV R3, 0		; cor para apagar o proximo pixel 
+    CALL write_pixel		; escreve cada pixel do boneco
+    ADD R4, 2			;****************************************#####################################podemos apagar isto?
+    ADD R2, 1			; próxima coluna
+    SUB R5, 1			; menos uma coluna para tratar
+    JNZ erase_pixels		; continua até percorrer toda a largura do objeto
+    SUB R6, 1			; menos uma linha para tratar
+    JZ end_erase		; termina depois de percorrer todas as linhas
+    POP R5			; vai buscar a largura do objeto a desenhar
+    ADD R1,1			; proxima linha
+    MOV R2, R8			; volta para a primeira coluna
     JMP reset_lenght_erase
 
 end_erase:
@@ -189,6 +198,14 @@ end_erase:
 	POP	R2
 	POP R1
 	RET
+
+; **********************************************************************
+; ESCREVE_PIXEL - Escreve um pixel na linha e coluna indicadas.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R3 - cor do pixel (em formato ARGB de 16 bits)
+;
+; **********************************************************************
 
 write_pixel:
     MOV [SET_LINE], R1
