@@ -1,3 +1,8 @@
+
+; *********************************************************************************
+; * Constantes
+; *********************************************************************************
+
 DISPLAYS   EQU 0A000H
 POUT       EQU 0C000H 
 PIN        EQU 0E000H  
@@ -34,7 +39,9 @@ GRE         EQU 0F0A0H
 WEI         EQU 07CAFH
 YEL            EQU 0FFF0H
 
-
+; *********************************************************************************
+; * Dados 
+; *********************************************************************************
 PLACE       1000H
 pilha:
 	STACK 100H			
@@ -58,7 +65,9 @@ DEF_PROBE:
     WORD        LENGHT_PROBE
     WORD        HEIGHT_PROBE
     WORD        YEL
-
+; *********************************************************************************
+; * Código
+; *********************************************************************************
 PLACE   0				
 start:                                                              ; Initializing registers
 	MOV  SP, SP_inicial                                             ; Initialize the stack pointer at 1200H
@@ -76,9 +85,9 @@ start:                                                              ; Initializi
 ship_position:
     MOV R1, LINE_SHIP
     MOV R2, COLUMN_SHIP
-    MOV R4, DEF_SHIP
-    MOV R7, 0
-    MOV [SELECT_PIXEL_SCREEN], R7
+    MOV R4, DEF_SHIP			; endereço da tabela que define a nave
+    MOV R7, 0	
+    MOV [SELECT_PIXEL_SCREEN], R7	; seleciona o ecra da nave
 
 display_ship:
     CALL graphics
