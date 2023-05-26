@@ -48,10 +48,10 @@ DEF_METEOR:					; tabela que define o boneco (cor, largura, pixels)
 DEF_SHIP:
 	WORD		LENGTH_SHIP
 	WORD		HEIGHT_SHIP
-	WORD		0,0,RED,RED,RED,RED,RED,RED,RED,RED,RED,RED,RED,0,0,
-				0,RED,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,RED,0,
-				RED,GRE,GRE,GRE,WEI,WEI,WEI,WEI,WEI,WEI,WEI,GRE,GRE,GRE,RED,
-				RED,GRE,GRE,GRE,WEI,WEI,WEI,WEI,WEI,WEI,WEI,GRE,GRE,GRE,RED,
+	WORD		000,000,RED,RED,RED,RED,RED,RED,RED,RED,RED,RED,RED,000,000,
+				000,RED,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,RED,000,
+				RED,GRE,GRE,GRE,WEI,YEL,WEI,WEI,WEI,YEL,WEI,GRE,GRE,GRE,RED,
+				RED,GRE,GRE,GRE,WEI,YEL,YEL,WEI,YEL,YEL,WEI,GRE,GRE,GRE,RED,
 				RED,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,GRE,RED
 
 DEF_PROBE:
@@ -69,13 +69,15 @@ start:                                                              ; Initializi
     MOV [SELECT_BG], R1	; seleciona o cenário de fundo
     MOV  R0, DISPLAYS   ;
     MOVB [R0], R1 
+    MOV R9,0            ; INICIALIZAR O REGISTO CONTDOR DA POSICAO DO METEORO
+    MOV R6,0            ; INICIALIZAR O TREGISTO CONTADOR DA POSICAO DA SONDA
 
 
 ship_position:
     MOV R1, LINE_SHIP
     MOV R2, COLUMN_SHIP
     MOV R4, DEF_SHIP
-    MOV R7, 1
+    MOV R7, 0
     MOV [SELECT_PIXEL_SCREEN], R7
 
 display_ship:
@@ -86,7 +88,7 @@ probe_position:
     MOV R1, LINE_PROBE
     MOV R2, COLUMN_PROBE
     MOV R4, DEF_PROBE
-    MOV R7, 2
+    MOV R7, 1
     MOV [SELECT_PIXEL_SCREEN], R7
 
 display_probe:
@@ -96,7 +98,7 @@ meteor_position:
     MOV R1, LINE_METEOR
     MOV R2, COLUMN_METEOR
     MOV R4, DEF_METEOR
-    MOV R7, 0
+    MOV R7, 2
     MOV [SELECT_PIXEL_SCREEN], R7
 
 display_meteor:
@@ -160,9 +162,9 @@ erase_pixels:       		; desenha os pixels do boneco a partir da tabela
     ADD R4, 2
     ADD R2, 1
     SUB R5, 1
-    JNZ draw
+    JNZ erase_pixels
     SUB R6, 1
-    JZ end_graphics
+    JZ end_erase
     POP R5
     ADD R1,1
     MOV R2, R8
@@ -170,6 +172,7 @@ erase_pixels:       		; desenha os pixels do boneco a partir da tabela
 
 end_erase:
 	POP	R5
+    POP R6
 	POP	R4
 	POP	R3
 	POP	R2
@@ -279,20 +282,44 @@ subtract:
     JMP  keyboard_handler
 
 update_displays:
+    PUSH R1
     MOV  R1, DISPLAYS
-    MOVB  [R1],R10
+    MOV  [R1],R10
+    POP R1
     RET
 
 move_sonda:
-    MOV  R1, [COLUMN_PROBE]
-    MOV  R2, [LINE_PROBE]
-    CALL erase_object
-    SUB R2, 1
-    MOV [LINE_PROBE],R2
-    JMP graphics
+PUSH R1
+PUSH R2
+PUSH R4
+MOV R4, DEF_PROBE
+MOV R2, COLUMN_PROBE
+MOV R1, LINE_PROBE
+SUB R1,R6 
+CALL erase_object
+    ADD R6, 1
+    SUB R1, 1
+    CALL graphics
+POP  R4
+POP R2
+POP R1
+    JMP keyboard_handler
     
 move_meteor:
-    CALL erase_object
+CALL play_sound
+PUSH R1
+PUSH R2
+PUSH R4
+MOV R4, DEF_METEOR
+MOV R2, COLUMN_METEOR
+ADD R2, R9
+MOV R1, R2 
+CALL erase_object
+    ADD R9, 1
     ADD R2, 1
-    ADD R1, 1
-    JMP graphics
+    MOV R1, R2
+    CALL graphics
+POP R4
+POP R2
+POP R1
+    JMP keyboard_handler
