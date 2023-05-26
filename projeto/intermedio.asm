@@ -105,6 +105,15 @@ display_meteor:
     CALL graphics
     JMP keyboard_handler
 
+; **********************************************************************
+; graphics - Desenha na linha e coluna indicadas
+;			    com a forma e cor definidas na tabela indicada.
+; Argumentos:   R1 - linha
+;               R2 - coluna
+;               R4 - tabela que define o boneco
+;
+; **********************************************************************
+
 graphics:
     PUSH R1
     PUSH R2
@@ -113,24 +122,26 @@ graphics:
     PUSH R6
 
     MOV R8, R2
-    MOV R5, [R4]
-    MOV R6, [R4+2]
-    ADD R4, 4
-    reset_lenght:
-        PUSH R5
+    MOV R5, [R4]	; obtém a largura do boneco
+    MOV R6, [R4+2]	; obtem a altura do boneco
+    ADD R4, 4		; endereço da cor do 1º pixel (4 porque a largura e altura são DUAS wordS)
     
-draw:
-    MOV R3, [R4]
-    CALL write_pixel
-    ADD R4, 2
-    ADD R2, 1
-    SUB R5, 1
-    JNZ draw
-    SUB R6, 1
-    JZ end_graphics
-    POP R5
-    ADD R1,1
-    MOV R2, R8
+reinicializa_largura:
+    reset_lenght:
+        PUSH R5			;guarda a largura na pilha
+    
+draw:				; desenha os pixels a partir da tabela
+    MOV R3, [R4]		; obtém a cor do próximo pixel
+    CALL write_pixel		; escreve cada pixel
+    ADD R4, 2			; endereço da cor do próximo pixel (2 porque cada cor de pixel é uma word)
+    ADD R2, 1			; próxima coluna
+    SUB R5, 1			; menos uma coluna para tratar
+    JNZ draw			; continua até percorrer toda a largura do objeto
+    SUB R6, 1			; menos uma linha para tratar
+    JZ end_graphics		; termina depois de percorrer todas as linhas
+    POP R5			; vai buscar a largura do objeto a desenhar
+    ADD R1,1			; proxima linha
+    MOV R2, R8			; volta para a primeira coluna
     JMP reset_lenght
 
 end_graphics:     
