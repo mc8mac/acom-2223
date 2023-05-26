@@ -208,9 +208,9 @@ end_erase:
 ; **********************************************************************
 
 write_pixel:
-    MOV [SET_LINE], R1
-    MOV [SET_COLUMN], R2
-    MOV [SET_PIXEL], R3
+    MOV [SET_LINE], R1		; seleciona a linha
+    MOV [SET_COLUMN], R2	; seleciona a coluna
+    MOV [SET_PIXEL], R3		; altera a cor do pixel na linha e coluna já selecionadas
     RET
 
 keyboard_handler:
