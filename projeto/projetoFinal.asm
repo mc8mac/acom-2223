@@ -486,15 +486,12 @@ controller:                         ; hub de comandos
     POP  R2                         ;
     POP  R1                         ;
     CMP  R0, 0                      ; tecla premida foi 0?
-    JZ   dispara_sonda_esq                 ; move a sonda para cima
-    CMP  R0, 4                      ; tecla premida foi 4? 
-    JZ   move_meteor                ; move o meteoro para baixo-direita
-    MOV  R11, 8                     ; 
-    CMP  R0,R11                     ; tecla premida foi 8? 
-    JZ   soma                       ; adiciona um ao display
-    MOV  R11, 0CH                   ; 
-    CMP  R0, R11                    ; tecla premida foi C?
-    JZ   subtrai                    ; subtrai um ao display
+    JZ   dispara_sonda_esq          ; dispara sonda direita
+    CMP  R0, 1                      ; tecla premida foi 1?
+    JZ   dispara_sonda_centro       ; dispara sonda para o centro
+    CMP  R0, 2                      ; tecla premida foi 2?
+    JZ   dispara_sonda_direito      ; dispara sonda para o centro
+    
     RET    
 ; **********************************************************************
 ; soma-
