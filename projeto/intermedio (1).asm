@@ -260,15 +260,16 @@ ciclo:
        
         MOV R1, -1
         MOV R2, 1
+
         verifica_int:
-      
         MOV  R5, estado_int
         ADD R5,2            ; a int 1 esta uma word depois da int 0
         MOV  R3, [R5]		; valor da vari�vel que diz se houve uma interrup��o com o mesmo n�mero da coluna
         CMP  R3, 0
         JZ next
         DI
-
+        MOV R3,0
+        MOV [R5],R3             ; reinicia a interrupcao 1 a zero
         MOV  R7, 5                      ;
         MOV  [SEL_PIXEL_ECRA], R7       ; seleciona o ecrã do meteoro
         MOV R4,0                    ; numero da sonda
@@ -306,6 +307,7 @@ desenha_main:                       ;
     PUSH R2                         ;
     PUSH R3                         ;
     PUSH R4                         ;
+    PUSH R5
     PUSH R6                         ;
 
     MOV  R8, R2		                ; guarda a primeira coluna
@@ -332,7 +334,8 @@ draw:				                ; desenha os pixels a partir da tabela
 
 fim_desenha_main:                   ;
     POP R5                          ;
-    POP R6                          ;  
+    POP R6                          ;
+    POP R5  
     POP R4                          ;
     POP R3                          ;
     POP R2                          ;
@@ -540,35 +543,53 @@ update_displays:                    ;
 ; **********************************************************************
 
 move_sonda:                         ;                         ;
-    PUSH R3
-    PUSH R4                         ;
+    PUSH R3                         ;
     PUSH R5
     PUSH R6
     PUSH R7
+    PUSH R8
+    PUSH R4
     PUSH R1                         ;
     PUSH R2
     MOV  R3, DEF_SONDA              ; define a sonda como sprite a desenhar
     MOV  R5, sonda_posicao
-    MOV R6,  [R5+2]                 ; linha da sonda
-    MOV  R7, [R5+4]            ; COLUNA DA SONDA
-    MOV R5,[R5+R4]                  ; numero de vezes que a sonda x se moveu
-    MUL R1, R5                  ; NUMERO DE VEZES QUE A SONDA JA SE MOVEU
-    MUL R2, R5                     ; numero de vezes quye a sonda ja se moveu
+    ADD R5,R4                  ; numero de vezes que a sonda x se moveu
+    MOV R8,[R5+R4]                  ; numero de vezes que a sonda x se moveu
+    ADD R4, 2
+    MOV R6,  [R5+R4]                 ; linha da sonda
+    ADD R4, 2
+    MOV  R7, [R5+R4]            ; COLUNA DA SONDA
+    MUL R1, R8                  ; NUMERO DE VEZES QUE A SONDA JA SE MOVEU
+    MUL R2, R8                     ; numero de vezes quye a sonda ja se moveu
     MOV R4, R3                      ; a rotina apaga e desenha recebe R4 como argumento
     ADD  R1, R6                     ; linha atual da sonda
     ADD  R2, R7                     ; coluna atual da sonda
     CALL apaga_object               ; apaga a sonda
     POP R2                          ; informacao sobre como se deve mover a sonda
     POP R1                          ; informacao sobre como se deve mover a sonda
-    ADD  R5, 1                      ; adiciona ao nº de vezes que já se moveu a sonda
+    POP R4                          ; numnero do asteroide
+    MOV R8,[R5+R4]                  ; numero de vezes que a sonda x se moveu
+    ADD  R8, 1                      ; adiciona ao nº de vezes que já se moveu a sonda
+    MUL R1, R8                  ; NUMERO DE VEZES QUE A SONDA JA SE MOVEU
+    MUL R2, R8                     ; numero de vezes quye a sonda ja se moveu
     ADD  R1, R6                     ; linha NOVA da sonda
     ADD  R2, R7                     ; coluna NOVA da sonda
+    MOV [R5+R4],R8                      ; GUARDA numero de vezes que a sonda ja se moveu
+    MOV R6,R4                             ; guarda o numero da sonda
+    MOV R4,R3                           ; DEF_SONDA
     CALL desenha_main               ; desenha a sonda na nova posição
-    MOV R3, DISTANCIA_SONDA
-    CMP R5, R3
+    MOV R7, DISTANCIA_SONDA
+    CMP R8, R7                      ; verifica se chegou ao limite
     JNZ fim_sonda
+
+    CALL apaga_object               ; apaga a sonda
+     
+
     MOV R3,0
-    MOV [R5],R3
+    MOV [R5+R6],R3                  ; reinicia o numero de vezes que a sonda foi movida
+    MOV R5, tecla_dispara_sonda
+    MOV [R5+R6],R3                  ; desativa a tecla correspondente a sonda
+    
     fim_sonda:
     POP R7
     POP R6
@@ -718,10 +739,12 @@ gera_num_aleatorio:
     PUSH R4
     MOV R1, PIN
     MOVB R10, [R1]
-    SHR R10, 4            ;  coloca os bits 7 a 4 (aleatórios) do periférico nos bits 3 a 0 do registo, ficando-se assim com um valor aleatório entre 0 e 15
-    CMP R10, 4              ; 
+    SHR R10, 5            ;  coloca os bits 7 a 4 (aleatórios) do periférico nos bits 3 a 0 do registo, ficando-se assim com um valor aleatório entre 0 e 3
+    CMP R10, 3              ; 
     JNZ m_meteor
     m_mineravel:
+    MOVB R10, [R1]
+    SHR R10, 4            ;  coloca os bits 7 a 4 (aleatórios) do periférico nos bits 3 a 0 do registo, ficando-se assim com um valor aleatório entre 0 e 15
     MOV R4, 5
     MOD R10, R4             ; posicao e direcao do meteoro aleatoria
     MOV R4, DEF_MINERAVEL_1
@@ -729,6 +752,8 @@ gera_num_aleatorio:
     JMP fim_m
 
     m_meteor: 
+    MOVB R10, [R1]
+    SHR R10, 4            ;  coloca os bits 7 a 4 (aleatórios) do periférico nos bits 3 a 0 do registo, ficando-se assim com um valor aleatório entre 0 e 15
     MOV R4, 5
     MOD R10, R4             ; posicao e direcao do meteoro aleatoria
     MOV R4, DEF_METEORO
