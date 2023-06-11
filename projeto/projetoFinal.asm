@@ -3,13 +3,13 @@
 ; Constantes
 ; *********************************************************************************
 
-DISPLAYS   EQU 0A000H               ; endereço para escrita nos displays
-POUT       EQU 0C000H               ; endereço do periférico de saída
-PIN        EQU 0E000H               ; endereço do periférico de entrada
-MASK       EQU 0FH                  ; máscara para bits de menor peso
-MASK2      EQU 0FFF0H
-LINHAS     EQU 16                   ; constante para reset das linhas a verificar no teclado
-OP         EQU 4                    ; operador para multiplicação
+DISPLAYS            EQU 0A000H      ; endereço para escrita nos displays
+POUT                EQU 0C000H      ; endereço do periférico de saída
+PIN                 EQU 0E000H      ; endereço do periférico de entrada
+MASK                EQU 0FH         ; máscara para bits de menor peso
+MASK2               EQU 0FFF0H
+LINHAS              EQU 16          ; constante para reset das linhas a verificar no teclado
+OP                  EQU 4           ; operador para multiplicação
 
 DEFINE_LINHA    	EQU 600AH       ; endereço do comando para definir a linha
 DEFINE_COLUNA  		EQU 600CH       ; endereço do comando para definir a coluna
@@ -37,15 +37,16 @@ COLUNA_NAVE			EQU 25          ; posição x inicial da nave
 HEIGHT_NAVE         EQU 5           ; altura do sprite
 LENGTH_NAVE         EQU 15          ; largura do sprite
 
-LINHA_SONDA_CEN         EQU 27          ; posição y inicial da nave
-COLUNA_SONDA_CEN        EQU 32          ; posição x inicial da nave
-LINHA_SONDA_ESQ         EQU 27          ; posição y inicial da nave
-COLUNA_SONDA_ESQ        EQU 26          ; posição x inicial da nave
-LINHA_SONDA_DIR         EQU 27          ; posição y inicial da nave
-COLUNA_SONDA_DIR        EQU 38          ; posição x inicial da nave
+LINHA_SONDA_CEN     EQU 27          ; posição y inicial da nave
+COLUNA_SONDA_CEN    EQU 32          ; posição x inicial da nave
+LINHA_SONDA_ESQ     EQU 27          ; posição y inicial da nave
+COLUNA_SONDA_ESQ    EQU 26          ; posição x inicial da nave
+LINHA_SONDA_DIR     EQU 27          ; posição y inicial da nave
+COLUNA_SONDA_DIR    EQU 38          ; posição x inicial da nave
 HEIGHT_SONDA        EQU 1           ; altura do sprite
 LENGHT_SONDA        EQU 1           ; largura do sprite
-DISTANCIA_SONDA         EQU 12         ; distancia maxima da sonda
+DISTANCIA_SONDA     EQU 12         ; distancia maxima da sonda
+ENERGIA_INICIAL     EQU 100
 
 RED                 EQU 0FF00H      ; vermelho
 GRE                 EQU 0F0A0H      ; verde
@@ -62,12 +63,12 @@ pilha:
 SP_inicial:		
 
 tab:
-	WORD rot_int_0			; rotina de atendimento da interrup��o 0
-    WORD rot_int_1          ; rotina de atendimento da interrup��o 1
+	WORD rot_int_0			; rotina de atendimento da interrupção 0
+    WORD rot_int_1          ; rotina de atendimento da interrupção 1
 
 estado_int:
-	WORD        0				; se int0, indica que a interrup��o 0 ocorreu
-    WORD        0			    ; se int1, indica que a interrup��o 0 ocorreu
+	WORD        0				; se int0, indica que a interrupção 0 ocorreu
+    WORD        0			    ; se int1, indica que a interrupção 0 ocorreu
 
 sonda_posicao:
     WORD        0,LINHA_SONDA_ESQ,COLUNA_SONDA_ESQ
@@ -171,7 +172,7 @@ DEF_SONDA:                          ; tabela que define a sonda (Largura - Altur
 
 PLACE   0				
 inicio:          
-    MOV  BTE, tab			        ; inicializa BTE (registo de Base da Tabela de Exce��es)                                                    
+    MOV  BTE, tab			        ; inicializa BTE (registo de Base da Tabela de Exceções)                                                    
 	MOV  SP, SP_inicial             ; inicializa o stack pointer
     MOV  [LIMPA_AVISO], R1	        ; apaga o aviso de nenhum cenário selecionado (o valor de R1 não é relevante)
     MOV  [LIMPA_ECRA], R1	        ; apaga todos os pixels já desenhados (o valor de R1 não é relevante)
@@ -181,6 +182,8 @@ inicio:
     MOVB [R0], R1                   ; define os displays a 000
     MOV  R9,0                       ; inicializa o contador da posição do meteoro
     MOV  R6,0                       ; inicializa o contador da posição da sonda
+    MOV R10, ENERGIA_INICIAL
+    CALL converte_display
 
 posiciona_nave:                     ; define as coordenadas para desenhar a nave
     MOV  R1, LINHA_NAVE             ; define a coordenada y
@@ -193,9 +196,9 @@ desenha_nave:                       ;
     CALL desenha_main               ; desenha o que foi definido em R4, na posição x = R2, y = R1 
 
 
-   EI0					; permite interrup��es 0
+   EI0					; permite interrupções 0
    EI1
-	EI					; permite interrup��es (geral)
+	EI					; permite interrupções (geral)
 
 ciclo:
 
@@ -203,12 +206,12 @@ ciclo:
 
     interrupcao0:
         MOV  R5, estado_int
-        MOV  R2, [R5]		; valor da vari�vel que diz se houve uma interrup��o com o mesmo n�mero da coluna
+        MOV  R2, [R5]		; valor da variável que diz se houve uma interrupção com o mesmo número da coluna
         CMP  R2, 0
-        JZ   interrupcao1	; se n�o houve interrup��o, salta o processo
+        JZ   interrupcao1	; se não houve interrupção, salta o processo
         DI          ; desliga as interrupcoes para mover todos os asteroides
         MOV  R2, 0
-        MOV  [R5], R2		; coloca a zero o valor da vari�vel que diz se houve uma interrup��o (consome evento)
+        MOV  [R5], R2		; coloca a zero o valor da variável que diz se houve uma interrupção (consome evento)
 
         MOV  R7, 1                      ;
         MOV  [SEL_PIXEL_ECRA], R7       ; seleciona o ecrã do meteoro
@@ -232,49 +235,44 @@ ciclo:
         EI          ; reativa as interrupcoes
 
     interrupcao1:
+    
         MOV R6, tecla_dispara_sonda
         MOV R5,[R6]
         CMP R5,1              ; verifica se tecla esquerda foi pressionada
         JZ dispara_esq
+        proximo_tiro1:
         ADD R6,2
         MOV R5,[R6]
         CMP R5,1              ; verifica a tecla central
         JZ dispara_cen
+        proximo_tiro2:
         ADD R6,2
         MOV R5,[R6]
         CMP R5,1               ; verifica a tecla direita
         JZ dispara_dir
+        MOV  R5, estado_int
+        ADD R5,2            ; a int 1 esta uma word depois da int 0
+        MOV R3,0
+        MOV [R5],R3             ; reinicia a interrupcao 1 a zero
+    
         JMP next
 
         dispara_esq:
-        
-        MOV R1, -1
-        MOV R2, -1
-        jmp verifica_int
-        dispara_cen:
-   
-        MOV R1, -1
-        MOV R2, 0
-        jmp verifica_int
-        dispara_dir:
-       
-        MOV R1, -1
-        MOV R2, 1
+        CALL tiro_esq
+        JMP proximo_tiro1
 
-        verifica_int:
+        dispara_cen:
+        CALL tiro_cen
+        JMP proximo_tiro2
+        
+        dispara_dir:
+        CALL tiro_dir
         MOV  R5, estado_int
         ADD R5,2            ; a int 1 esta uma word depois da int 0
-        MOV  R3, [R5]		; valor da vari�vel que diz se houve uma interrup��o com o mesmo n�mero da coluna
-        CMP  R3, 0
-        JZ next
-        DI
         MOV R3,0
         MOV [R5],R3             ; reinicia a interrupcao 1 a zero
-        MOV  R7, 5                      ;
-        MOV  [SEL_PIXEL_ECRA], R7       ; seleciona o ecrã do meteoro
-        MOV R4,0                    ; numero da sonda
-        CALL move_sonda
-        EI
+    
+        
 
     next:
 JMP ciclo
@@ -309,6 +307,7 @@ desenha_main:                       ;
     PUSH R4                         ;
     PUSH R5
     PUSH R6                         ;
+    PUSH R8
 
     MOV  R8, R2		                ; guarda a primeira coluna
     MOV  R5, [R4]	                ; obtém a largura do boneco
@@ -334,6 +333,7 @@ draw:				                ; desenha os pixels a partir da tabela
 
 fim_desenha_main:                   ;
     POP R5                          ;
+    POP R8
     POP R6                          ;
     POP R5  
     POP R4                          ;
@@ -492,33 +492,114 @@ controller:                         ; hub de comandos
     CMP  R0, 2                      ; tecla premida foi 2?
     JZ   dispara_sonda_direito      ; dispara sonda para o centro
     
-    RET    
-; **********************************************************************
-; soma-
-; **********************************************************************
-
-soma:                               ;
-    INC  R10                        ; incrementa o valor no display
-    CALL update_displays            ; atualiza os displays com o novo valor
-    RET            ; verifica qual a próxima tecla
+    RET
 
 ; **********************************************************************
-; subtrai-
+; converte display - Hexadecimal para decimal e vice versa para os display
+;
+; Argumentos:   R0 - tecla pressionada
+;
 ; **********************************************************************
 
-subtrai:                            ;
-    DEC  R10                        ; decrementa o valor no display
-    CALL update_displays            ; atualiza os displays com o novo valor
-    RET            ; verifica qual a próxima tecla
+consumir_energia:                   ; A cada N segundos retira 3 de energia
+    SUB R10, 3
+    CALL converte_display
+    RET
+
+consumir_energia_disparo:
+    SUB R10, 5
+    CALL converte_display
+    RET
+
+converte_display:
+    PUSH R1
+    PUSH R2
+    PUSH R3
+    PUSH R4
+    PUSH R5
+    PUSH R10
+
+    MOV R1, 10                      ;operador de divisão
+    MOV R2, 1                       ;operador de multiplicação, (Somatorio de cada digito vezes 16^ordem do digito)
+    MOV R3, 0                       ;contador de digitos
+    MOV R4, R10                     ;guarda o valor de R10 para não destrui-lo
+    MOV R5, 0                       ;valor convertido de hexadecimal para decimal
+    JMP operacoes
+
+    handle_expoentes:
+        MOV R2, 16
+        PUSH R3
+        loop_expoentes:
+            CMP R3, 0
+            JZ fim_loop_expoentes
+            SUB R3,1
+            MUL R2, R2
+            JMP loop_expoentes
+
+    fim_loop_expoentes:
+        POP R3
+
+    operacoes:
+        MOD R4, R1
+        MUL R4, R2
+        ADD R5, R4
+        DIV R10, R1
+        JZ fim_converte_display
+        MOV R4, R10
+        INC R3
+        JMP handle_expoentes
+
+    fim_converte_display:
+        MOV R10, R5
+        CALL update_displays
+        POP R10
+        POP R5
+        POP R4
+        POP R3
+        POP R2
+        POP R1
+    
+    RET
+        
 
 
 ; **********************************************************************
 ; DISPARA_SONDA_esq-
 ; **********************************************************************
 dispara_sonda_esq:
+    CALL consumir_energia_disparo
     PUSH R1
     PUSH R2
     MOV R1,tecla_dispara_sonda
+    MOV R2,1
+    MOV [R1],R2
+    POP R2
+    POP R1
+    RET
+
+; **********************************************************************
+; DISPARA_SONDA_cen-
+; **********************************************************************
+dispara_sonda_centro:
+    CALL consumir_energia_disparo
+    PUSH R1
+    PUSH R2
+    MOV R1,tecla_dispara_sonda
+    ADD R1, 2                   ; adiciona uma word para aceder ao segundo valor da tabela
+    MOV R2,1
+    MOV [R1],R2
+    POP R2
+    POP R1
+    RET
+; **********************************************************************
+; DISPARA_SONDA_cen-
+; **********************************************************************
+dispara_sonda_direito:
+    CALL consumir_energia_disparo
+    PUSH R1
+    PUSH R2
+    MOV R1,tecla_dispara_sonda
+    ADD R1, 4                   ; adiciona duas words para aceder ao segundo valor da tabela
     MOV R2,1
     MOV [R1],R2
     POP R2
@@ -551,8 +632,8 @@ move_sonda:                         ;                         ;
     MOV  R3, DEF_SONDA              ; define a sonda como sprite a desenhar
     MOV  R5, sonda_posicao
     ADD R5,R4                  ; numero de vezes que a sonda x se moveu
-    MOV R8,[R5+R4]                  ; numero de vezes que a sonda x se moveu
-    ADD R4, 2
+    MOV R8,[R5]                  ; numero de vezes que a sonda x se moveu
+    MOV R4, 2
     MOV R6,  [R5+R4]                 ; linha da sonda
     ADD R4, 2
     MOV  R7, [R5+R4]            ; COLUNA DA SONDA
@@ -565,13 +646,13 @@ move_sonda:                         ;                         ;
     POP R2                          ; informacao sobre como se deve mover a sonda
     POP R1                          ; informacao sobre como se deve mover a sonda
     POP R4                          ; numnero do asteroide
-    MOV R8,[R5+R4]                  ; numero de vezes que a sonda x se moveu
+    MOV R8,[R5]                  ; numero de vezes que a sonda x se moveu
     ADD  R8, 1                      ; adiciona ao nº de vezes que já se moveu a sonda
     MUL R1, R8                  ; NUMERO DE VEZES QUE A SONDA JA SE MOVEU
     MUL R2, R8                     ; numero de vezes quye a sonda ja se moveu
     ADD  R1, R6                     ; linha NOVA da sonda
     ADD  R2, R7                     ; coluna NOVA da sonda
-    MOV [R5+R4],R8                      ; GUARDA numero de vezes que a sonda ja se moveu
+    MOV [R5],R8                      ; GUARDA numero de vezes que a sonda ja se moveu
     MOV R6,R4                             ; guarda o numero da sonda
     MOV R4,R3                           ; DEF_SONDA
     CALL desenha_main               ; desenha a sonda na nova posição
@@ -583,8 +664,11 @@ move_sonda:                         ;                         ;
      
 
     MOV R3,0
-    MOV [R5+R6],R3                  ; reinicia o numero de vezes que a sonda foi movida
+    MOV [R5],R3                  ; reinicia o numero de vezes que a sonda foi movida
     MOV R5, tecla_dispara_sonda
+    MOV R3,3
+    DIV R6,R3                    ; para obter o numero da sonda em saltos de uma words
+    MOV R3, 0
     MOV [R5+R6],R3                  ; desativa a tecla correspondente a sonda
     
     fim_sonda:
@@ -703,29 +787,29 @@ fim_move_meteor:
     RET            
 
 ; **********************************************************************
-; ROT_INT_0 - 	Rotina de atendimento da interrup��o 0
-;			Assinala o evento na componente 0 da vari�vel evento_int
+; ROT_INT_0 - 	Rotina de atendimento da interrupção 0
+;			Assinala o evento na componente 0 da variável evento_int
 ; **********************************************************************
 rot_int_0:
 	PUSH R0
 	PUSH R1
 	MOV  R0, estado_int
-	MOV  R1, 1			; assinala que houve uma interrup��o 0
-	MOV  [R0], R1			; na componente 0 da vari�vel evento_int
+	MOV  R1, 1			; assinala que houve uma interrupção 0
+	MOV  [R0], R1			; na componente 0 da variável evento_int
 	POP  R1
 	POP  R0
 	RFE
    ; **********************************************************************
-; ROT_INT_1 - 	Rotina de atendimento da interrup��o 0
-;			Assinala o evento na componente 0 da vari�vel evento_int
+; ROT_INT_1 - 	Rotina de atendimento da interrupção 0
+;			Assinala o evento na componente 0 da variável evento_int
 ; **********************************************************************
 rot_int_1:
 	PUSH R0
 	PUSH R1
 	MOV  R0, estado_int
     ADD R0,2
-	MOV  R1, 1			; assinala que houve uma interrup��o 0
-	MOV  [R0], R1			; na componente 0 da vari�vel evento_int
+	MOV  R1, 1			; assinala que houve uma interrupção 0
+	MOV  [R0], R1			; na componente 0 da variável evento_int
 	POP  R1
 	POP  R0
 	RFE
@@ -806,6 +890,81 @@ direcao:
     MOV [R1+R3],R4
     fim_type:
     MOV R4,[R1+R3]      ; LE A INFORMACAO SOBRE O TIPO DE METEORO
+    POP R5
+    POP R3
+    POP R2
+    POP R1
+    RET
+
+
+
+verifica_int1:
+    PUSH R1
+    PUSH R2
+    PUSH R3
+    PUSH R5
+    PUSH R7
+    MOV  R5, estado_int
+    ADD R5,2            ; a int 1 esta uma word depois da int 0
+    MOV  R3, [R5]		; valor da variável que diz se houve uma interrupção com o mesmo número da coluna
+    CMP R3,0
+    JZ fim_verificacao
+    MOV  R7, 5                      ;
+    MOV  [SEL_PIXEL_ECRA], R7       ; seleciona o ecrã do meteoro
+    CALL move_sonda
+    fim_verificacao:
+    POP R7
+    POP R5
+    POP R3
+    POP R2
+    POP R1
+    RET
+
+tiro_esq:
+    PUSH R1
+    PUSH R2
+    PUSH R3
+    PUSH R5         ;necessario para verificacao dos proximos tiros
+    PUSH R6         ;necessario para verificacao dos proximos tiros
+    MOV R1, -1
+    MOV R2, -1
+    MOV R4,0
+    CALL verifica_int1
+    POP R6
+    POP R5
+    POP R3
+    POP R2
+    POP R1
+    RET
+
+tiro_cen:
+    PUSH R1
+    PUSH R2
+    PUSH R3
+    PUSH R5         ;necessario para verificacao dos proximos tiros
+    PUSH R6         ;necessario para verificacao dos proximos tiros
+    MOV R1, -1
+    MOV R2, 0
+    MOV R4, 6
+    CALL verifica_int1
+    POP R6
+    POP R5
+    POP R3
+    POP R2
+    POP R1
+    RET
+
+tiro_dir:
+    PUSH R1
+    PUSH R2
+    PUSH R3
+    PUSH R5         ;necessario para verificacao dos proximos tiros
+    PUSH R6         ;necessario para verificacao dos proximos tiros
+    MOV R1, -1
+    MOV R2, 1
+    MOV R4,12
+    CALL verifica_int1
+    POP R6
     POP R5
     POP R3
     POP R2
