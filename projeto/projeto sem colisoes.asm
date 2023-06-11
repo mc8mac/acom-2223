@@ -733,11 +733,19 @@ controller:                         ; hub de comandos
     POP R1
     POP R0
     RET
+; **********************************************************************
+; consumir_energia - consome 3 unidades da energia ao ritmo da int
+;		
+; **********************************************************************
 
 consumir_energia:                   ; A cada N segundos retira 3 de energia
     SUB R10, 3
     CALL converte_display
     RET
+; **********************************************************************
+; consumir_energia_disparo - consome 5 unidades da energia ao disparar 
+;				uma sonda
+; **********************************************************************
 
 consumir_energia_disparo:
     SUB R10, 5
