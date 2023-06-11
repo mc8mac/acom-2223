@@ -334,7 +334,8 @@ perdeu_o_jogo:
 
 
 ; **********************************************************************
-; morte_por energia-
+; morte_por energia- depois de se ter verificado que a energia chegou ao valor zero
+;		a rotina apga todos os objetos existentes e reinicia os displays
 ; **********************************************************************
 morte_por_energia:
 PUSH R1
@@ -636,7 +637,8 @@ controller:                         ; hub de comandos
 
 
 ; **********************************************************************
-; retoma_jogo-
+; retoma_jogo- qunado em estado de pausa se a tecla F for detetada a rotina
+;		retoma o movimento dos objetos e o ecra de jogo
 ; **********************************************************************
  retoma_jogo:
     PUSH R1
@@ -651,7 +653,9 @@ controller:                         ; hub de comandos
     RET
 
 ; **********************************************************************
-; para_jogo-
+; para_jogo- altewra a imagem de fundo e poem o codigo em estado de loop 
+;		de maneira a nao ler mais codigo para alem daquele que espera
+;		que o jogo seja retomado
 ; **********************************************************************
  para_jogo:
     PUSH R1
@@ -666,7 +670,10 @@ controller:                         ; hub de comandos
     RET
 
 ; **********************************************************************
-; reinicia_o_jogo-
+; reinicia_o_jogo- apos perder o jogo quando a tecla D for pressionada
+;			reinicia as posicoes dos asteroides e das sonda
+;			reinicia os displays a 100
+;			insere o cenario de jogo
 ; **********************************************************************
     reinicia_o_jogo:
     PUSH R0
@@ -714,7 +721,8 @@ controller:                         ; hub de comandos
     RET
 
 ; **********************************************************************
-; inicia_o_jogo-
+; inicia_o_jogo-quando no ecra inicial se a tecla C for pressionada
+;		desenha os objetos necessarios e inicia as interrupcoes
 ; **********************************************************************
     inicia_o_jogo:
     PUSH R0
@@ -797,7 +805,7 @@ converte_display:
 
 
 ; **********************************************************************
-; DISPARA_SONDA_esq-
+; DISPARA_SONDA_esq-altera o estado da tecla para pressionada(1)
 ; **********************************************************************
 dispara_sonda_esq:
     CALL consumir_energia_disparo
@@ -811,7 +819,7 @@ dispara_sonda_esq:
     RET
 
 ; **********************************************************************
-; DISPARA_SONDA_cen-
+; DISPARA_SONDA_cen-altera o estado da tecla para pressionada(1)
 ; **********************************************************************
 dispara_sonda_centro:
     CALL consumir_energia_disparo
@@ -825,7 +833,7 @@ dispara_sonda_centro:
     POP R1
     RET
 ; **********************************************************************
-; DISPARA_SONDA_cen-
+; DISPARA_SONDA_cen-altera o estado da tecla para pressionada(1)
 ; **********************************************************************
 dispara_sonda_direito:
     CALL consumir_energia_disparo
@@ -1062,6 +1070,11 @@ rot_int_2:
 	POP  R0
 	RFE
 
+; **********************************************************************
+; gera_num_aleatorio - gera um valor aleatorio entre 0 e 3 para escolher o tipo
+;			de meteoro e depois gera um numero aleatorio entre 0 e 15 
+;			para escolher uma origem e direcao para o meteoro
+; **********************************************************************
 
 gera_num_aleatorio:
     PUSH R1
@@ -1094,8 +1107,14 @@ gera_num_aleatorio:
         POP R10
         POP R1
         RET
-;argumentos R5, R2, R1, R10
-;DEVOLVE OS MESMOS
+
+; **********************************************************************
+; direcao - le das tabelas dos meteoro qual a direcao em que se vai movimentar 
+;		o meteoro
+; argumentos R5, R2, R1, R10
+; DEVOLVE OS MESMOS
+; **********************************************************************
+
 direcao:
     PUSH R3
         CMP R5,-1
@@ -1123,9 +1142,15 @@ direcao:
         saida:
         POP R3
         RET
-;argumentos- R3 numero do asteroide
-; argumento R9 numero de vezes que o meteoro foi movido
-;argumento-R4 tipo de meteoro(definido no gera numero aleatorio)
+
+; **********************************************************************
+; define_type - rotina que le se um dado meteoro ja possui tipo(mineravel ou nao)
+;		ou se ainda e necessario atribuir um
+; argumentos - R3 numero do asteroide
+; argumento - R9 numero de vezes que o meteoro foi movido
+; argumento - R4 tipo de meteoro(definido no gera numero aleatorio)
+; **********************************************************************
+
     define_type:
     PUSH R1
     PUSH R2
@@ -1145,6 +1170,10 @@ direcao:
     POP R1
     RET
 
+; **********************************************************************
+; verifica_int- no caso do disparo de uma sonda a rotina verifica o estado da interrupcao
+;		para decidir se deve mover a sonda ou nao
+; **********************************************************************
 
 
 verifica_int1:
@@ -1169,6 +1198,11 @@ verifica_int1:
     POP R1
     RET
 
+; **********************************************************************
+; tiro_esq - rotina indica a direcao que a sonda se vai mover
+; **********************************************************************
+
+
 tiro_esq:
     PUSH R1
     PUSH R2
@@ -1185,6 +1219,10 @@ tiro_esq:
     POP R2
     POP R1
     RET
+; **********************************************************************
+; tiro_cen - rotina indica a direcao que a sonda se vai mover
+; **********************************************************************
+
 
 tiro_cen:
     PUSH R1
@@ -1202,6 +1240,10 @@ tiro_cen:
     POP R2
     POP R1
     RET
+; **********************************************************************
+; tiro_dir - rotina indica a direcao que a sonda se vai mover
+; **********************************************************************
+
 
 tiro_dir:
     PUSH R1
