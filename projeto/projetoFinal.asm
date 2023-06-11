@@ -517,6 +517,7 @@ converte_display:
     PUSH R3
     PUSH R4
     PUSH R5
+    PUSH R6
     PUSH R10
 
     MOV R1, 10                      ;operador de divisão
@@ -524,16 +525,16 @@ converte_display:
     MOV R3, 0                       ;contador de digitos
     MOV R4, R10                     ;guarda o valor de R10 para não destrui-lo
     MOV R5, 0                       ;valor convertido de hexadecimal para decimal
+    MOV R6, 16
     JMP operacoes
 
     handle_expoentes:
         MOV R2, 16
         PUSH R3
         loop_expoentes:
-            CMP R3, 0
-            JZ fim_loop_expoentes
             SUB R3,1
-            MUL R2, R2
+            JZ fim_loop_expoentes
+            MUL R2, R6
             JMP loop_expoentes
 
     fim_loop_expoentes:
@@ -553,12 +554,13 @@ converte_display:
         MOV R10, R5
         CALL update_displays
         POP R10
+        POP R6
         POP R5
         POP R4
         POP R3
         POP R2
         POP R1
-    
+
     RET
         
 
